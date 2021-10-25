@@ -1,0 +1,46 @@
+version: '3.7'
+
+services:
+  web:
+    container_name: web
+    build:
+      context: web
+      dockerfile: ../docker/ui-app/Dockerfile
+    restart: always
+    tty: true
+    volumes:
+      - './web/:/app'
+      - '/app/node_modules'
+    ports:
+      - "3000:3000"
+
+
+  api:
+    container_name: api
+    build:
+      dockerfile: docker/api/Dockerfile
+      context: .
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - GOPATH=/app/api/_build/vendor
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/volume:/app/volumes
+
+  revproxy:
+    build:
+      dockerfile: ./Dockerfile
+      context: docker/rev-proxy/
+    image: "reverseproxy:1.0.0"
+    ports:
+      - "8081:80"
+    depends_on:
+      - web
+      - api
+
+networks:
+  default:
+    external: false
